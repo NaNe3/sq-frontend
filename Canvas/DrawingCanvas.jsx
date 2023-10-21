@@ -36,6 +36,10 @@ function DrawingCanvas() {
     // Set the canvas background color to white
     context.fillStyle = 'white';
     context.fillRect(0, 0, canvas.width, canvas.height);
+
+    canvas.addEventListener('touchstart', handleTouchStart);
+    canvas.addEventListener('touchmove', handleTouchMove);
+    canvas.addEventListener('touchend', endDrawing);
   }, []);
 
 
@@ -47,6 +51,14 @@ function DrawingCanvas() {
     }
   }, []);
 
+  const handleTouchStart = (e) => {
+    startDrawing(e.touches[0]);
+  };
+
+  const handleTouchMove = (e) => {
+    draw(e.touches[0]);
+  };
+
   const startDrawing = (e) => {
     setIsDrawing(true);
     context.lineWidth = (sliderValue) * 5; // Set the line width
@@ -56,15 +68,35 @@ function DrawingCanvas() {
     context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
   };
 
+  const [lastX, setLastX] = useState(null);
+  const [lastY, setLastY] = useState(null);
+
   const draw = (e) => {
     if (!isDrawing) return;
-    context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    context.stroke();
+  
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
+  
+    context.lineWidth = (sliderValue) * 5; // Set the line width
+    context.lineCap = 'round'; // Set the line cap style
+    context.strokeStyle = strokeStyle; // Set the stroke color
+  
+    if (lastX !== null && lastY !== null) {
+      // Draw a quadratic curve from the previous point to the current point
+      context.quadraticCurveTo(lastX, lastY, (x + lastX) / 2, (y + lastY) / 2);
+      context.stroke();
+    }
+  
+    setLastX(x);
+    setLastY(y);
   };
 
   const endDrawing = () => {
     setIsDrawing(false);
     context.closePath();
+
+    setLastX(null);
+    setLastY(null);
   };
 
   const clearCanvas = () => {
